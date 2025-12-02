@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style type="text/css">
+      body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #e0e0e0; }
+      #container { display: flex; height: 100vh; }
+      #opciones { width: 160px; background-color: #2c2c2c; color: white; padding: 10px; overflow-y: auto; box-shadow: 2px 0 10px rgba(0,0,0,0.3); }
+      #canvas-holder { flex: 1; display: flex; justify-content: center; align-items: center; background: black; }
+      canvas { box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+      /* Estilos UI Restaurados */
+      .nav-controls { margin: 15px 0; }
+      .nav-grid { display: grid; grid-template-columns: repeat(3, 40px); gap: 5px; justify-content: center; }
+      .nav-btn { width: 40px; height: 40px; background: #444; border: 2px solid #666; border-radius: 8px; color: white; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+      .nav-btn:hover { background: #555; border-color: #888; transform: scale(1.05); }
+      .nav-btn:active { transform: scale(0.95); }
+
+      .zoom-controls { display: grid; grid-template-columns: repeat(2, 60px); gap: 5px; justify-content: center; margin-top: 10px; }
+
+      .section-divider { height: 1px; background: #555; margin: 15px 0; }
+      .section-title { font-size: 11px; text-align: center; margin: 10px 0 5px 0; color: #aaa; text-transform: uppercase; }
+      select { width: 100%; padding: 5px; margin: 5px 0; background: #444; color: white; border: 1px solid #666; border-radius: 4px; font-size: 11px; }
+
+      /* Estilos para los botones de vista (Sólido/Malla) */
+      .view-controls { display: flex; justify-content: center; gap: 10px; }
+      .menu-icon { width: 40px; height: 40px; background: #444; border: 2px solid #666; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 20px; transition: all 0.3s; }
+      .menu-icon:hover { background: #555; transform: scale(1.05); }
+      .menu-icon.active { background: #4CAF50; border-color: #4CAF50; }
+
+      /* Estilos para la grilla de colores */
+      .color-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 10px 0; }
+      .color-btn { width: 100%; height: 40px; border: 2px solid #666; border-radius: 5px; cursor: pointer; transition: all 0.3s; }
+      .color-btn:hover { transform: scale(1.1); border-color: white; }
+      .color-btn.active { border: 3px solid white; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+      #info { font-size: 10px; color: #aaa; text-align: center; margin-top: 10px; white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+    <title>Visor OBJ Completo - WebGL 2.0</title>
+    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+  </head>
+  <body>
+    <div id="container">
+      <div id="opciones">
+        <div class="nav-controls">
+          <div class="nav-grid">
+            <div></div>
+            <button class="nav-btn" id="upBtn">▲</button>
+            <div></div>
+            <button class="nav-btn" id="leftBtn">◄</button
+            ><button class="nav-btn" id="homeBtn">🏠</button
+            ><button class="nav-btn" id="rightBtn">►</button>
+            <div></div>
+            <button class="nav-btn" id="downBtn">▼</button>
+            <div></div>
+          </div>
+          <div class="zoom-controls">
+            <button class="nav-btn" id="zoomOutBtn">−</button>
+            <button class="nav-btn" id="zoomInBtn">+</button>
+          </div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section-title">Modelo OBJ</div>
+        <select id="modelSelector">
+          <option value="red.obj">Modelo 1</option>
+          <option value="megatron.obj">Cubo Prueba</option>
+        </select>
+
+        <div class="section-divider"></div>
+
+        <div class="section-title">Vista</div>
+        <div class="view-controls">
+          <div class="menu-icon active" id="solidBtn" title="Sólido">⬛</div>
+          <div class="menu-icon" id="wireframeBtn" title="Malla">⊞</div>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <div class="section-title">Colores / Textura</div>
+        <div class="color-grid">
+          <div
+            class="color-btn"
+            style="background: url('https://via.placeholder.com/50x50/333/fff?text=Tex'); background-size: cover;"
+            data-mode="texture"
+            title="Usar Textura Original"
+          ></div>
+
+          <div
+            class="color-btn"
+            style="background: #ff5722;"
+            data-color="#ff5722"
+            title="Naranja"
+          ></div>
+          <div
+            class="color-btn"
+            style="background: #2196F3;"
+            data-color="#2196F3"
+            title="Azul"
+          ></div>
+          <div
+            class="color-btn"
+            style="background: #4CAF50;"
+            data-color="#4CAF50"
+            title="Verde"
+          ></div>
+          <div
+            class="color-btn"
+            style="background: #9C27B0;"
+            data-color="#9C27B0"
+            title="Morado"
+          ></div>
+          <div
+            class="color-btn"
+            style="background: #F44336;"
+            data-color="#F44336"
+            title="Rojo"
+          ></div>
+        </div>
+
+        <div class="section-divider"></div>
+        <p id="info">Listo.</p>
+      </div>
+
+      <div id="canvas-holder">
+        <canvas id="webglcanvas" width="800" height="800"></canvas>
+      </div>
+    </div>
+
+    <script id="vs" type="vertex">
+      #version 300 es
+      precision mediump float;
+
+      uniform mat4 uMatrizProyeccion;
+      uniform mat4 uMatrizVista;
+      uniform mat4 uMatrizModelo;
+
+      layout(location = 0) in vec3 aVertices;
+      layout(location = 1) in vec2 aTexCoords;
+      layout(location = 2) in vec3 aNormales;
+
+      out vec2 vTexCoords;
+      out vec3 vNormal;
+
+      void main() {
+        vTexCoords = aTexCoords;
+        vNormal = aNormales;
+        gl_Position = uMatrizProyeccion * uMatrizVista * uMatrizModelo * vec4(aVertices, 1.0);
+      }
+    </script>
+
+    <script id="fs" type="fragment">
+      #version 300 es
+      precision mediump float;
+
+      uniform sampler2D uUnidadDeTextura;
+      uniform bool uUsarTextura;
+      uniform vec4 uColorSolido;
+
+      in vec2 vTexCoords;
+      in vec3 vNormal;
+
+      out vec4 color;
+
+      void main() {
+        if (uUsarTextura) {
+            // Usa la textura del archivo
+            color = texture(uUnidadDeTextura, vTexCoords);
+        } else {
+            // Usa el color seleccionado en el menú
+            // Añadimos un poco de luz simple para que no se vea plano
+            vec3 lightDir = normalize(vec3(0.5, 1.0, 0.8));
+            // Si no hay normales (0,0,0), asumimos luz ambiental plena
+            float diff = 1.0;
+            if(length(vNormal) > 0.1) {
+                diff = max(dot(normalize(vNormal), lightDir), 0.4);
+            }
+            color = vec4(uColorSolido.rgb * diff, uColorSolido.a);
+        }
+      }
+    </script>
+
+    <script>
+      "use strict";
+
+      /* VARIABLES GLOBALES */
+      let canvas, gl, programaID;
+      let meshObject = null;
+      let arcBall;
+
+      // Estado de la Aplicación
+      let renderMode = "TRIANGLES"; // TRIANGLES o LINES
+      let useTextureState = true;   // true = textura, false = color sólido
+      let currentSolidColor = [0.5, 0.5, 0.5, 1.0]; // Color gris por defecto
+      let hasLoadedTexture = false; // ¿El modelo actual tiene textura real?
+
+      // Matrices y Uniforms
+      let uMatrizProyeccion, uMatrizVista, uMatrizModelo, uUnidadDeTextura, uUsarTextura, uColorSolido;
+      let MatrizProyeccion = new Array(16);
+      let MatrizVista = new Array(16);
+      let MatrizModelo = new Array(16);
+      let MatrizRotacion = new Array(16);
+      let B = new Array(16);
+
+      // Mouse
+      let boton_izq_presionado = false;
+      let boton_der_presionado = false;
+      let tx = 0, ty = 0;
+      let sx = 1, sy = 1, sz = 1;
+      const PAN_SPEED = 0.2;
+
+      function identidad(r){r[0]=1;r[4]=0;r[8]=0;r[12]=0;r[1]=0;r[5]=1;r[9]=0;r[13]=0;r[2]=0;r[6]=0;r[10]=1;r[14]=0;r[3]=0;r[7]=0;r[11]=0;r[15]=1;}
+      function traslacion(m,tx,ty,tz){let r=[1,0,0,0,0,1,0,0,0,0,1,0,tx,ty,tz,1];multiplica(m,m,r);}
+      function escalacion(m,sx,sy,sz){let r=[sx,0,0,0,0,sy,0,0,0,0,sz,0,0,0,0,1];multiplica(m,m,r);}
+      function multiplica(c,a,b){let r=new Array(16),i,j,k;for(i=0;i<4;i++)for(j=0;j<4;j++){let s=0;for(k=0;k<4;k++)s+=a[i+k*4]*b[k+j*4];r[i+j*4]=s;}for(i=0;i<16;i++)c[i]=r[i];}
+      function ortho(r,l,ri,b,t,n,f){r[0]=2/(ri-l);r[4]=0;r[8]=0;r[12]=-(ri+l)/(ri-l);r[1]=0;r[5]=2/(t-b);r[9]=0;r[13]=-(t+b)/(t-b);r[2]=0;r[6]=0;r[10]=-2/(f-n);r[14]=-(f+n)/(f-n);r[3]=0;r[7]=0;r[11]=0;r[15]=1;}
+
+      class Vector3{constructor(x,y,z){this.x=x;this.y=y;this.z=z;}mas(v){return new Vector3(this.x+v.x,this.y+v.y,this.z+v.z);}menos(v){return new Vector3(this.x-v.x,this.y-v.y,this.z-v.z);}producto_vectorial(v){return new Vector3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x);}producto_escalar(v){return this.x*v.x+this.y*v.y+this.z*v.z;}longitud(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);}}
+      class Cuaternion{constructor(w,x,y,z){this.w=w;this.x=x;this.y=y;this.z=z;}static rota2(a,q){let d=(q.x*q.x)+(q.y*q.y)+(q.z*q.z)+(q.w*q.w);let s=(d>0)?(2/d):0;a[0]=1-(q.y*q.y+q.z*q.z)*s;a[4]=(q.x*q.y-q.w*q.z)*s;a[8]=(q.x*q.z+q.w*q.y)*s;a[12]=0;a[1]=(q.x*q.y+q.w*q.z)*s;a[5]=1-(q.x*q.x+q.z*q.z)*s;a[9]=(q.y*q.z-q.w*q.x)*s;a[13]=0;a[2]=(q.x*q.z-q.w*q.y)*s;a[6]=(q.y*q.z+q.w*q.x)*s;a[10]=1-(q.x*q.x+q.y*q.y)*s;a[14]=0;a[3]=0;a[7]=0;a[11]=0;a[15]=1;}}
+      class ArcBall{constructor(w,h){this.Epsilon=1e-5;this.U=new Vector3();this.V=new Vector3();this.ajusta(w,h);}ajusta(w,h){this.ajustaAncho=2/(w-1);this.ajustaAlto=2/(h-1);}obtieneVector(v,x,y){let t={x:(x*this.ajustaAncho)-1,y:1-(y*this.ajustaAlto)};let l2=t.x*t.x+t.y*t.y;if(l2>1){let n=1/Math.sqrt(l2);v.x=t.x*n;v.y=t.y*n;v.z=0;}else{v.x=t.x;v.y=t.y;v.z=Math.sqrt(1-l2);}}primerPunto(x,y){this.obtieneVector(this.U,x,y);}segundoPunto(x,y){let q=new Cuaternion();this.obtieneVector(this.V,x,y);let N=this.U.producto_vectorial(this.V);if(N.longitud()>this.Epsilon){q.x=N.x;q.y=N.y;q.z=N.z;q.w=this.U.producto_escalar(this.V);}else{q.x=q.y=q.z=q.w=0;}return q;}}
+
+      /* CLASE MESH OBJ */
+      class MeshOBJ {
+        constructor(gl, objData, textureImage) {
+          this.gl = gl;
+          this.texture = null;
+
+          // Parseo
+          const parsed = this.parseOBJ(objData);
+          this.vertexCount = parsed.vertices.length / 3;
+
+          // Textura
+          if(textureImage) {
+            this.texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            hasLoadedTexture = true;
+            useTextureState = true; // Activar textura por defecto al cargar
+          } else {
+            hasLoadedTexture = false;
+            useTextureState = false; // Si no hay imagen, usar color
+          }
+
+          // Buffers
+          this.vao = gl.createVertexArray();
+          gl.bindVertexArray(this.vao);
+
+          const vBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(parsed.vertices), gl.STATIC_DRAW);
+          gl.enableVertexAttribArray(0);
+          gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+
+          const tBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, tBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(parsed.texcoords), gl.STATIC_DRAW);
+          gl.enableVertexAttribArray(1);
+          gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
+
+          const nBuffer = gl.createBuffer();
+          gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer);
+          gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(parsed.normals), gl.STATIC_DRAW);
+          gl.enableVertexAttribArray(2);
+          gl.vertexAttribPointer(2, 3, gl.FLOAT, false, 0, 0);
+
+          gl.bindVertexArray(null);
+        }
+
+        parseOBJ(text) {
+          const rawVerts = []; const rawTex = []; const rawNorms = [];
+          const finalVerts = []; const finalTex = []; const finalNorms = [];
+          const lines = text.split('\n');
+          for(let line of lines) {
+            line = line.trim();
+            if(line.startsWith('v ')) {
+              const parts = line.split(/\s+/);
+              rawVerts.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
+            } else if(line.startsWith('vt ')) {
+              const parts = line.split(/\s+/);
+              rawTex.push(parseFloat(parts[1]), parseFloat(parts[2]));
+            } else if(line.startsWith('vn ')) {
+                const parts = line.split(/\s+/);
+                rawNorms.push(parseFloat(parts[1]), parseFloat(parts[2]), parseFloat(parts[3]));
+            } else if(line.startsWith('f ')) {
+              const parts = line.split(/\s+/).slice(1);
+              for(let i=1; i < parts.length - 1; i++) {
+                this.processFaceVertex(parts[0], rawVerts, rawTex, rawNorms, finalVerts, finalTex, finalNorms);
+                this.processFaceVertex(parts[i], rawVerts, rawTex, rawNorms, finalVerts, finalTex, finalNorms);
+                this.processFaceVertex(parts[i+1], rawVerts, rawTex, rawNorms, finalVerts, finalTex, finalNorms);
+              }
+            }
+          }
+          return { vertices: finalVerts, texcoords: finalTex, normals: finalNorms };
+        }
+
+        processFaceVertex(part, rV, rT, rN, fV, fT, fN) {
+          const idxs = part.split('/');
+          const vIdx = (parseInt(idxs[0]) - 1) * 3;
+          fV.push(rV[vIdx], rV[vIdx+1], rV[vIdx+2]);
+          if(idxs[1] && idxs[1].length > 0) {
+            const tIdx = (parseInt(idxs[1]) - 1) * 2;
+            fT.push(rT[tIdx], rT[tIdx+1]);
+          } else { fT.push(0, 0); }
+          if(idxs[2] && idxs[2].length > 0) {
+            const nIdx = (parseInt(idxs[2]) - 1) * 3;
+            fN.push(rN[nIdx], rN[nIdx+1], rN[nIdx+2]);
+          } else { fN.push(0, 1, 0); }
+        }
+
+        dibuja(gl) {
+          gl.bindVertexArray(this.vao);
+
+          // Decisión: ¿Textura o Color?
+          // Si el usuario quiere textura (useTextureState) Y existe textura cargada (hasLoadedTexture)
+          let reallyUseTexture = useTextureState && hasLoadedTexture;
+
+          if(reallyUseTexture) {
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
+            gl.uniform1i(uUnidadDeTextura, 0);
+            gl.uniform1i(uUsarTextura, 1);
+          } else {
+            gl.uniform1i(uUsarTextura, 0); // Usar shader de color sólido
+            gl.uniform4fv(uColorSolido, currentSolidColor);
+          }
+
+          // Modo de Dibujo (Sólido o Alambre)
+          let mode = gl.TRIANGLES;
+          if(renderMode === "LINES") mode = gl.LINES; // Pseudo-wireframe
+
+          gl.drawArrays(mode, 0, this.vertexCount);
+          gl.bindVertexArray(null);
+          gl.bindTexture(gl.TEXTURE_2D, null);
+        }
+      }
+
+      /* FUNCIONES DE CARGA */
+      async function cargarModelo(nombreOBJ) {
+        const info = document.getElementById("info");
+        info.textContent = `Cargando ${nombreOBJ}...`;
+        try {
+            const responseObj = await fetch(nombreOBJ);
+            if(!responseObj.ok) throw new Error("No se encontró el .obj");
+            const textObj = await responseObj.text();
+
+            let nombreMTL = null;
+            const lines = textObj.split('\n');
+            for(let l of lines) {
+                if(l.trim().startsWith('mtllib ')) {
+                    nombreMTL = l.trim().split(/\s+/)[1];
+                    break;
+                }
+            }
+
+            let imagenCargada = null;
+            if(nombreMTL) {
+                const responseMtl = await fetch(nombreMTL);
+                if(responseMtl.ok) {
+                    const textMtl = await responseMtl.text();
+                    let nombreTextura = null;
+                    const mtlLines = textMtl.split('\n');
+                    for(let ml of mtlLines) {
+                        if(ml.trim().startsWith('map_Kd ')) {
+                            nombreTextura = ml.trim().split(/\s+/)[1];
+                            break;
+                        }
+                    }
+                    if(nombreTextura) imagenCargada = await cargarImagen(nombreTextura);
+                }
+            }
+            meshObject = new MeshOBJ(gl, textObj, imagenCargada);
+            info.textContent = "Modelo Cargado.";
+
+            // Resetear UI de textura
+            if(hasLoadedTexture) {
+                 useTextureState = true;
+                 document.querySelectorAll(".color-btn").forEach(b => b.classList.remove("active"));
+                 document.querySelector('[data-mode="texture"]').classList.add("active");
+            }
+
+            dibuja();
+        } catch (error) {
+            info.textContent = "Error: " + error.message;
+            console.error(error);
+        }
+      }
+
+      function cargarImagen(src) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`Error img ${src}`));
+            img.src = src;
+        });
+      }
+
+      /* INICIALIZACIÓN Y EVENTOS */
+      function compilaEnlazaLosShaders() {
+        let vs = gl.createShader(gl.VERTEX_SHADER);
+        gl.shaderSource(vs, document.getElementById("vs").text.trim());
+        gl.compileShader(vs);
+        if(!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(vs));
+
+        let fs = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(fs, document.getElementById("fs").text.trim());
+        gl.compileShader(fs);
+        if(!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(fs));
+
+        programaID = gl.createProgram();
+        gl.attachShader(programaID, vs);
+        gl.attachShader(programaID, fs);
+        gl.linkProgram(programaID);
+        gl.useProgram(programaID);
+      }
+
+      function dibuja() {
+        if (!meshObject) return;
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        identidad(MatrizModelo);
+        traslacion(MatrizModelo, tx, ty, 0);
+        escalacion(MatrizModelo, sx, sy, sz);
+        escalacion(MatrizModelo, 0.5, 0.5, 0.5);
+        multiplica(MatrizModelo, MatrizModelo, MatrizRotacion);
+        gl.uniformMatrix4fv(uMatrizModelo, false, MatrizModelo);
+        meshObject.dibuja(gl);
+        requestAnimationFrame(dibuja);
+      }
+
+      function main() {
+        canvas = document.getElementById("webglcanvas");
+        gl = canvas.getContext("webgl2");
+        if (!gl) return;
+
+        // Listeners Mouse
+        canvas.addEventListener("mousedown", (e)=>{
+             let rect=canvas.getBoundingClientRect();
+             let x=e.clientX-rect.left, y=e.clientY-rect.top;
+             if(e.button==0){ B=MatrizRotacion.slice(); arcBall.primerPunto(x,y); boton_izq_presionado=true; }
+             else if(e.button==2){ boton_der_presionado=true; }
+        });
+        window.addEventListener("mouseup", ()=>{ boton_izq_presionado=false; boton_der_presionado=false; });
+        canvas.addEventListener("mousemove", (e)=>{
+             if(!boton_izq_presionado && !boton_der_presionado) return;
+             let rect=canvas.getBoundingClientRect();
+             let x=e.clientX-rect.left, y=e.clientY-rect.top;
+             if(boton_izq_presionado){ let q=arcBall.segundoPunto(x,y); Cuaternion.rota2(MatrizRotacion,q); multiplica(MatrizRotacion,MatrizRotacion,B); }
+             else if(boton_der_presionado){ tx=(x/canvas.width*10)-5; ty=-((y/canvas.height*10)-5); }
+             requestAnimationFrame(dibuja);
+        });
+        canvas.addEventListener("wheel", (e)=>{ e.preventDefault(); let f=e.deltaY>0?0.9:1.1; sx*=f;sy*=f;sz*=f; requestAnimationFrame(dibuja); }, {passive:false});
+        canvas.oncontextmenu = (e) => e.preventDefault();
+
+        // Listeners UI Navegación
+        document.getElementById("upBtn").onclick=()=>{ty+=PAN_SPEED;dibuja();};
+        document.getElementById("downBtn").onclick=()=>{ty-=PAN_SPEED;dibuja();};
+        document.getElementById("leftBtn").onclick=()=>{tx-=PAN_SPEED;dibuja();};
+        document.getElementById("rightBtn").onclick=()=>{tx+=PAN_SPEED;dibuja();};
+        document.getElementById("homeBtn").onclick=()=>{tx=0;ty=0;sx=1;sy=1;sz=1;identidad(MatrizRotacion);dibuja();};
+        document.getElementById("zoomInBtn").onclick=()=>{sx*=1.1;sy*=1.1;sz*=1.1;dibuja();};
+        document.getElementById("zoomOutBtn").onclick=()=>{sx*=0.9;sy*=0.9;sz*=0.9;dibuja();};
+        document.getElementById("modelSelector").onchange=(e)=>{ cargarModelo(e.target.value); };
+
+        // Listeners UI Vista (Solid / Wireframe)
+        const solidBtn = document.getElementById("solidBtn");
+        const wireBtn = document.getElementById("wireframeBtn");
+
+        solidBtn.onclick = () => {
+            renderMode = "TRIANGLES";
+            solidBtn.classList.add("active");
+            wireBtn.classList.remove("active");
+            dibuja();
+        };
+        wireBtn.onclick = () => {
+            renderMode = "LINES";
+            wireBtn.classList.add("active");
+            solidBtn.classList.remove("active");
+            dibuja();
+        };
+
+        // Listeners UI Colores
+        document.querySelectorAll(".color-btn").forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll(".color-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                if(btn.dataset.mode === "texture") {
+                    useTextureState = true;
+                    document.getElementById("info").textContent = "Modo: Textura Original";
+                } else {
+                    useTextureState = false;
+                    let hex = btn.dataset.color;
+                    currentSolidColor = [
+                        parseInt(hex.substr(1,2),16)/255,
+                        parseInt(hex.substr(3,2),16)/255,
+                        parseInt(hex.substr(5,2),16)/255,
+                        1.0
+                    ];
+                    document.getElementById("info").textContent = "Modo: Color Sólido";
+                }
+                dibuja();
+            };
+        });
+
+        gl.viewport(0, 0, canvas.width, canvas.height);
+        compilaEnlazaLosShaders();
+        arcBall = new ArcBall(canvas.width, canvas.height);
+
+        uMatrizProyeccion = gl.getUniformLocation(programaID, "uMatrizProyeccion");
+        uMatrizVista = gl.getUniformLocation(programaID, "uMatrizVista");
+        uMatrizModelo = gl.getUniformLocation(programaID, "uMatrizModelo");
+        uUnidadDeTextura = gl.getUniformLocation(programaID, "uUnidadDeTextura");
+        uUsarTextura = gl.getUniformLocation(programaID, "uUsarTextura");
+        uColorSolido = gl.getUniformLocation(programaID, "uColorSolido");
+
+        ortho(MatrizProyeccion, -1, 1, -1, 1, -20, 20);
+        gl.uniformMatrix4fv(uMatrizProyeccion, false, MatrizProyeccion);
+        identidad(MatrizVista);
+        gl.uniformMatrix4fv(uMatrizVista, false, MatrizVista);
+        identidad(MatrizRotacion);
+
+        gl.enable(gl.DEPTH_TEST);
+        gl.clearColor(0.1, 0.1, 0.1, 1.0);
+
+        cargarModelo(document.getElementById("modelSelector").value);
+      }
+
+      window.onload = main;
+    </script>
+  </body>
+</html>
